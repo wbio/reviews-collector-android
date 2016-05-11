@@ -41,7 +41,7 @@ class Collector {
 			followAllRedirects: true,
 			callback: function (error, result) {
 				if (error) {
-					console.log(`Could not complete the request: ${error}`);
+					console.error(`Could not complete the request: ${error}`);
 					self.retries++;
 					if (self.retries <= self.options.maxRetries) {
 						queue(result.options.pageNum);
@@ -51,7 +51,7 @@ class Collector {
 				try {
 					parse(JSON.parse(decoded.substring(6, decoded.length)), result.options.pageNum);
 				} catch (err) {
-					console.log(`Could not parse JSON: ${err}`);
+					console.error(`Could not parse JSON: ${err}`);
 					self.retries++;
 					if (self.retries <= self.options.maxRetries) {
 						queue(result.options.pageNum);
@@ -141,7 +141,7 @@ class Collector {
 					queue(nextPage);
 				}
 			} catch (err) {
-				console.log(`Could not turn response into reviews: ${err}`);
+				console.error(`Could not turn response into reviews: ${err}`);
 				self.retries++;
 				if (self.retries < self.options.maxRetries) {
 					queue(pageNum);
