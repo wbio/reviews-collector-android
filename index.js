@@ -8,6 +8,11 @@ const EventEmitter = require('events').EventEmitter;
 
 class Collector {
 
+	/**
+	 * Initialize a new instance of Collector
+	 * @param {string} appId - The app ID to collect reviews for
+	 * @param {Object} options - Configuration options for the review collection
+	 */
 	constructor(appId, options) {
 		const defaults = {
 			maxPages: 5,
@@ -15,16 +20,20 @@ class Collector {
 			delay: 5000,
 			maxRetries: 3,
 		};
-
-		this.appId = appId;
 		this.options = _.assign(defaults, options);
+		this.appId = appId;
 		this.emitter = new EventEmitter();
 		this.retries = 0;
 	}
 
+	/**
+	 * Collect reviews for the Collector's app using the options provided in the constructor
+	 */
 	collect() {
+		// Preserve our reference to 'this'
 		const self = this;
 
+		// Setup the Crawler instance
 		const c = new Crawler({
 			maxConnections: 1,
 			rateLimits: self.options.delay,
@@ -51,13 +60,19 @@ class Collector {
 			},
 		});
 
+		// Queue the first page
 		queue(0);
 
+		/**
+		 * Add a page to the Crawler queue to be parsed
+		 * @param {number} pageNum - The page number to be collected (0-indexed)
+		 */
 		function queue(pageNum) {
 			const url = `https://play.google.com/store/getreviews?id=${self.appId}&reviewSortOrder=0&reviewType=1&pageNum=${pageNum}`;
 			const postData = {
 				xhr: '1',
 			};
+			// Add the url to the Crawler queue
 			c.queue({
 				uri: url,
 				method: 'POST',
@@ -71,6 +86,11 @@ class Collector {
 			});
 		}
 
+		/**
+		 * Parse a reviews page and emit review objects
+		 * @param {string} result - The page HTML
+		 * @param {number} pageNum - The number of the page that is being parsed
+		 */
 		function parse(result, pageNum) {
 			const $ = cheerio.load(result[0][2]);
 			try {
@@ -130,6 +150,11 @@ class Collector {
 		}
 	}
 
+	/**
+	 * Attach event handlers to the Collector's event emitter
+	 * @param {string} event - The name of the event to listen for
+	 * @param {funtion} action - The function to be executed each time this event is emitted
+	 */
 	on(event, action) {
 		this.emitter.on(event, action);
 	}
@@ -137,6 +162,11 @@ class Collector {
 }
 module.exports = Collector;
 
+/**
+ * Helper function to decode a string to unicode
+ * @param {string} str - The string to be decoded
+ * @return {string} The resultant unicode string
+ */
 function decodeUnicode(str) {
 	if (str) {
 		const patt = /\\u([\d\w]{4})/gi;
@@ -144,15 +174,25 @@ function decodeUnicode(str) {
 	}
 }
 
+/**
+ * Helper function to decode a unicode string to UTF8
+ * @param {string} str - The string to be decoded
+ * @return {string} The resultant UTF8 string
+ */
 function decodeUTF8(str) {
 	try {
-		const decoded = escape(str);
-		return decodeURIComponent(decoded);
+		const encoded = escape(str);
+		return decodeURIComponent(encoded);
 	} catch (err) {
 		return str;
 	}
 }
 
+/**
+ * Helper function to turn a form object into a URL-encoded string
+ * @param {Object} form - The object to be converted
+ * @return {[type]} The URL-encoded string
+ */
 function formToString(form) {
 	const keys = Object.keys(form);
 	let str = '';
