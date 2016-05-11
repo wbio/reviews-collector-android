@@ -27,15 +27,26 @@ class Collector {
 
 		const c = new Crawler({
 			maxConnections: 1,
-			rateLimits: this.options.delay,
+			rateLimits: self.options.delay,
 			followRedirect: true,
 			followAllRedirects: true,
 			callback: function (error, result) {
+				if (error) {
+					console.log(`Could not complete the request: ${error}`);
+					self.retries++;
+					if (self.retries <= self.options.maxRetries) {
+						queue(result.options.pageNum);
+					}
+				}
 				const decoded = decodeUnicode(decodeUTF8(result.body));
 				try {
-					parse(JSON.parse(decoded.substring(6, decoded.length)), result.options.appInfo);
+					parse(JSON.parse(decoded.substring(6, decoded.length)), result.options.pageNum);
 				} catch (err) {
-					throw new Error('Could not parse JSON');
+					console.log(`Could not parse JSON: ${err}`);
+					self.retries++;
+					if (self.retries <= self.options.maxRetries) {
+						queue(result.options.pageNum);
+					}
 				}
 			},
 		});
@@ -91,12 +102,11 @@ class Collector {
 					review.title = $(reviewBody).children('.review-title').text().trim();
 					// Review Text
 					review.text = $(reviewBody)
-						.clone()    // clone the element
-						.children() // select all the children
-						.remove()   // remove all the children
-						.end()  // again go back to selected element
-						.text()
-						.trim();
+						.contents()
+						.filter(function () {
+							return this.nodeType === 3;
+						})[0]
+						.nodeValue;
 					// Review Version
 					review.version = 'Unknown';
 
@@ -111,6 +121,7 @@ class Collector {
 					queue(nextPage);
 				}
 			} catch (err) {
+				console.log(`Could not turn response into reviews: ${err}`);
 				self.retries++;
 				if (self.retries < self.options.maxRetries) {
 					queue(pageNum);
