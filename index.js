@@ -11,7 +11,7 @@ class Collector {
 	constructor(appId, options) {
 		const defaults = {
 			maxPages: 5,
-			userAgent: 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36',
+			userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36',
 			delay: 5000,
 			maxRetries: 3,
 		};
