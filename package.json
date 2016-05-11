@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/%3Awbio/reviews-collector-android/issues"
   },
-  "homepage": "https://github.com/%3Awbio/reviews-collector-android#readme"
+  "homepage": "https://github.com/%3Awbio/reviews-collector-android#readme",
+  "dependencies": {
+    "cheerio": "^0.20.0",
+    "lodash": "^4.12.0",
+    "node-webcrawler": "^0.7.3"
+  }
 }
