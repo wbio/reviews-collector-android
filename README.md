@@ -1,4 +1,7 @@
 # reviews-collector-android
+[![Build Status](https://travis-ci.org/wbio/reviews-collector-android.svg?branch=master)](https://travis-ci.org/wbio/reviews-collector-android)
+
+---
 
 ## To Do:
 
