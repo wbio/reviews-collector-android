@@ -8,6 +8,7 @@
 		"max-len": [2, 100, 2, {
 			"ignoreUrls": true,
 			"ignoreComments": true
-		}]
+		}],
+		"no-console": 0
 	}
 }
