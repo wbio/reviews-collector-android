@@ -9,7 +9,9 @@
 - Use request instead of node-webcrawler
 - Parse app name from page
 - Emit more events (errors, page start/complete)
-- Babel
-- Add more configuration on pages to collect reviews from (start page, # reviews, etc.)
-- Instructions
+- Babel for node < v5 (+ re-enable v4 in Travis)
+- Documentation in readme
+- Allow for multiple app IDs in a single Collector (create a map of appIDs + emit the appId)
+- Allow user to determine whether or not to keep going after each page (if desired)
+- TESTS
 - Move these to GitHub Issues
