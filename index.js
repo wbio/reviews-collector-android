@@ -42,20 +42,14 @@ class Collector {
 			callback: function (error, result) {
 				if (error) {
 					console.error(`Could not complete the request: ${error}`);
-					self.retries++;
-					if (self.retries <= self.options.maxRetries) {
-						queue(result.options.pageNum);
-					}
+					requeue(result.options.pageNum);
 				}
 				const decoded = decodeUnicode(decodeUTF8(result.body));
 				try {
 					parse(JSON.parse(decoded.substring(6, decoded.length)), result.options.pageNum);
 				} catch (err) {
 					console.error(`Could not parse JSON: ${err}`);
-					self.retries++;
-					if (self.retries <= self.options.maxRetries) {
-						queue(result.options.pageNum);
-					}
+					requeue(result.options.pageNum);
 				}
 			},
 		});
@@ -142,10 +136,20 @@ class Collector {
 				}
 			} catch (err) {
 				console.error(`Could not turn response into reviews: ${err}`);
-				self.retries++;
-				if (self.retries < self.options.maxRetries) {
-					queue(pageNum);
-				}
+				requeue(pageNum);
+			}
+		}
+
+		/**
+		 * Requeue a page if we aren't over the retries limit
+		 * @param {number} pageNum - The number of the page to requeue
+		 */
+		function requeue(pageNum) {
+			self.retries++;
+			if (self.retries < self.options.maxRetries) {
+				queue(pageNum);
+			} else {
+				self.emitter.emit('done collecting', new Error('Retry limit reached'));
 			}
 		}
 	}
