@@ -7,13 +7,14 @@ node_js:
   - "6.1"
   - "6.0"
   - "5"
-  - "4"
-  - "4.4"
-  - "4.3"
-  - "4.2"
-  - "4.1"
-  - "4.0"
-  - "iojs"
+# Don't worry about node v4 and below until we add Babel
+#  - "4"
+#  - "4.4"
+#  - "4.3"
+#  - "4.2"
+#  - "4.1"
+#  - "4.0"
+#  - "iojs"
 
 addons:
     code_climate:
