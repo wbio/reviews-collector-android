@@ -191,7 +191,6 @@ function responseToHtml(response) {
 			console.error('Unexpected response - JSON was not in the format we expected');
 			return undefined;
 		} catch (err) {
-			console.log(response.body);
 			console.error('Unexpected response - JSON was invalid');
 			return undefined;
 		}
