@@ -120,13 +120,12 @@ class Collector {
 						review.title = $(reviewBody).children('.review-title').text().trim();
 						// Review Text
 						review.text = $(reviewBody)
-							.contents()
-							.filter(function getNodeText() {
-								return this.nodeType === 3;
-							})[0]
-							.nodeValue;
-						// Review Version
-						review.version = 'Unknown';
+							.clone()
+							.children()
+							.remove()
+							.end()
+							.text()
+							.trim();
 
 						// Let our listener(s) know
 						self.emitter.emit('review', review);
@@ -178,20 +177,37 @@ module.exports = Collector;
  */
 function responseToHtml(response) {
 	if (response.headers['content-type'] === 'application/json; charset=utf-8') {
-		const body = response.body;
-		if (_.isArray(body) && body.length > 0) {
-			const arr = body[0];
-			if (_.isArray(arr) && arr.length === 4) {
-				return arr[2];
+		try {
+			const decoded = decodeUnicode(decodeUTF8(response.body));
+			const body = JSON.parse(removeLeadingChars(decoded));
+			if (_.isArray(body) && body.length > 0) {
+				const arr = body[0];
+				if (_.isArray(arr) && arr.length === 4) {
+					return arr[2];
+				}
+				console.error('No more reviews for this app');
+				return null;
 			}
-			console.error('No more reviews for this app');
-			return null;
+			console.error('Unexpected response - JSON was not in the format we expected');
+			return undefined;
+		} catch (err) {
+			console.log(response.body);
+			console.error('Unexpected response - JSON was invalid');
+			return undefined;
 		}
-		console.error('Unexpected response - JSON was not in the format we expected');
-		return undefined;
 	}
 	console.error('Unexpected response - was not in JSON format');
 	return undefined;
+}
+
+/**
+ * Helper function to get rid of the extraneous characters at the beginning of the response
+ * @param {string} str - The response string to remove the characters from
+ * @return {string} - The string with the leading characters removed
+ */
+function removeLeadingChars(str) {
+	const firstCharAt = str.indexOf('[');
+	return str.substring(firstCharAt, str.length);
 }
 
 /**
@@ -210,4 +226,30 @@ function formToString(form) {
 		str += `${keys[i]}=${form[keys[i]]}`;
 	}
 	return str;
+}
+
+/**
+ * Helper function to decode a string to unicode
+ * @param {string} str - The string to be decoded
+ * @return {string} The resultant unicode string
+ */
+function decodeUnicode(str) {
+	if (str) {
+		const patt = /\\u([\d\w]{4})/gi;
+		return str.replace(patt, (match, grp) => String.fromCharCode(parseInt(grp, 16)));
+	}
+}
+
+/**
+ * Helper function to decode a unicode string to UTF8
+ * @param {string} str - The string to be decoded
+ * @return {string} The resultant UTF8 string
+ */
+function decodeUTF8(str) {
+	try {
+		const encoded = escape(str);
+		return decodeURIComponent(encoded);
+	} catch (err) {
+		return str;
+	}
 }
