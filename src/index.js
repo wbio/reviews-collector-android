@@ -39,17 +39,12 @@ class Collector {
 			rateLimits: self.options.delay,
 			followRedirect: true,
 			followAllRedirects: true,
-			callback: function (error, result) {
+			callback: function processRequest(error, result) {
 				if (error) {
 					console.error(`Could not complete the request: ${error}`);
 					requeue(result.options.pageNum);
-				}
-				const decoded = decodeUnicode(decodeUTF8(result.body));
-				try {
-					parse(JSON.parse(decoded.substring(6, decoded.length)), result.options.pageNum);
-				} catch (err) {
-					console.error(`Could not parse JSON: ${err}`);
-					requeue(result.options.pageNum);
+				} else {
+					parse(result, result.options.pageNum);
 				}
 			},
 		});
@@ -86,57 +81,67 @@ class Collector {
 		 * @param {number} pageNum - The number of the page that is being parsed
 		 */
 		function parse(result, pageNum) {
-			const $ = cheerio.load(result[0][2]);
-			try {
-				const reviewObjs = $('.single-review');
-				let i;
-				// Get the reviews
-				for (i = 0; i < reviewObjs.length; i++) {
-					const review = {};
-					const reviewObj = $(reviewObjs[i]);
-					const reviewInfo = $(reviewObj).find('.review-info');
-					const reviewBody = $(reviewObj).children('.review-body');
-					// App Information
-					review.appId = self.appId;
-					review.appName = 'tbd';
-					review.os = 'Android';
-					review.device = 'Android';
-					review.type = 'review';
-					// Review ID
-					const id = reviewObj.children('.review-header').attr('data-reviewid');
-					review.id = id;
-					// Review Date
-					const dateStr = $(reviewInfo).children('.review-date').text();
-					review.date = new Date(dateStr);
-					// Review Rating
-					const ratingStr = $(reviewInfo).find('.current-rating').attr('style');
-					const widthRegex = /width: ([0-9]{2,3})%/;
-					review.rating = Number(widthRegex.exec(ratingStr)[1]) / 20;
-					// Review Title
-					review.title = $(reviewBody).children('.review-title').text().trim();
-					// Review Text
-					review.text = $(reviewBody)
-						.contents()
-						.filter(function () {
-							return this.nodeType === 3;
-						})[0]
-						.nodeValue;
-					// Review Version
-					review.version = 'Unknown';
-
-					// Let our listener(s) know
-					self.emitter.emit('review', review);
-				}
-				// Reset retries
-				self.retries = 0;
-				// Queue the next page if we're allowed
-				const nextPage = pageNum + 1;
-				if (nextPage < self.options.maxPages - 1) {
-					queue(nextPage);
-				}
-			} catch (err) {
-				console.error(`Could not turn response into reviews: ${err}`);
+			const html = responseToHtml(result);
+			if (typeof html === 'undefined') {
+				// We got an invalid response
 				requeue(pageNum);
+			} else if (html === null) {
+				// There were no more reviews
+				self.emitter.emit('done collecting', null);
+			} else if (typeof html === 'string') {
+				// We got a valid response, proceed
+				try {
+					const $ = cheerio.load(html);
+					const reviewObjs = $('.single-review');
+					let i;
+					// Get the reviews
+					for (i = 0; i < reviewObjs.length; i++) {
+						const review = {};
+						const reviewObj = $(reviewObjs[i]);
+						const reviewInfo = $(reviewObj).find('.review-info');
+						const reviewBody = $(reviewObj).children('.review-body');
+						// App Information
+						review.appId = self.appId;
+						review.appName = 'tbd';
+						review.os = 'Android';
+						review.device = 'Android';
+						review.type = 'review';
+						// Review ID
+						const id = reviewObj.children('.review-header').attr('data-reviewid');
+						review.id = id;
+						// Review Date
+						const dateStr = $(reviewInfo).children('.review-date').text();
+						review.date = new Date(dateStr);
+						// Review Rating
+						const ratingStr = $(reviewInfo).find('.current-rating').attr('style');
+						const widthRegex = /width: ([0-9]{2,3})%/;
+						review.rating = Number(widthRegex.exec(ratingStr)[1]) / 20;
+						// Review Title
+						review.title = $(reviewBody).children('.review-title').text().trim();
+						// Review Text
+						review.text = $(reviewBody)
+							.contents()
+							.filter(function getNodeText() {
+								return this.nodeType === 3;
+							})[0]
+							.nodeValue;
+						// Review Version
+						review.version = 'Unknown';
+
+						// Let our listener(s) know
+						self.emitter.emit('review', review);
+					}
+					// Reset retries
+					self.retries = 0;
+					// Queue the next page if we're allowed
+					const nextPage = pageNum + 1;
+					if (nextPage < self.options.maxPages - 1) {
+						queue(nextPage);
+					}
+				} catch (err) {
+					console.error(`Could not turn response into reviews: ${err}`);
+					requeue(pageNum);
+				}
 			}
 		}
 
@@ -167,29 +172,26 @@ class Collector {
 module.exports = Collector;
 
 /**
- * Helper function to decode a string to unicode
- * @param {string} str - The string to be decoded
- * @return {string} The resultant unicode string
+ * Extract the HTML from the HTTP request's response
+ * @param {Object} response - the response returned from the HTTP requesy
+ * @return {string|null|undefined} String if response was valid, null if no reviews, undefined if invalid response
  */
-function decodeUnicode(str) {
-	if (str) {
-		const patt = /\\u([\d\w]{4})/gi;
-		return str.replace(patt, (match, grp) => String.fromCharCode(parseInt(grp, 16)));
+function responseToHtml(response) {
+	if (response.headers['content-type'] === 'application/json; charset=utf-8') {
+		const body = response.body;
+		if (_.isArray(body) && body.length > 0) {
+			const arr = body[0];
+			if (_.isArray(arr) && arr.length === 4) {
+				return arr[2];
+			}
+			console.error('No more reviews for this app');
+			return null;
+		}
+		console.error('Unexpected response - JSON was not in the format we expected');
+		return undefined;
 	}
-}
-
-/**
- * Helper function to decode a unicode string to UTF8
- * @param {string} str - The string to be decoded
- * @return {string} The resultant UTF8 string
- */
-function decodeUTF8(str) {
-	try {
-		const encoded = escape(str);
-		return decodeURIComponent(encoded);
-	} catch (err) {
-		return str;
-	}
+	console.error('Unexpected response - was not in JSON format');
+	return undefined;
 }
 
 /**
