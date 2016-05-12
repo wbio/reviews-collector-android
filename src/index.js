@@ -185,7 +185,7 @@ function responseToHtml(response) {
 				if (_.isArray(arr) && arr.length === 4) {
 					return arr[2];
 				}
-				console.error('No more reviews for this app');
+				console.log('No more reviews for this app');
 				return null;
 			}
 			console.error('Unexpected response - JSON was not in the format we expected');
