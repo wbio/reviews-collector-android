@@ -40,7 +40,6 @@ describe('parsing the current version of the Google Play store', () => {
 		expect(_.isArray(reviews)).to.be.true;
 		const fields = {
 			appId: 0,
-			appName: 0,
 			os: 0,
 			device: 0,
 			type: 0,

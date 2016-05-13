@@ -103,7 +103,6 @@ class Collector {
 						const reviewBody = $(reviewObj).children('.review-body');
 						// App Information
 						review.appId = self.appId;
-						review.appName = 'tbd';
 						review.os = 'Android';
 						review.device = 'Android';
 						review.type = 'review';
