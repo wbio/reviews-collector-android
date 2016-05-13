@@ -134,6 +134,13 @@ class Collector {
 }
 module.exports = Collector;
 
+/**
+ * Convert HTML extracted from the reviews JSON object into an array of reviews
+ * @param {string} html - The HTML extracted via #responseToHtml
+ * @param {string} appId - The app ID of the app that the given HTML is from
+ * @param {EventEmitter} emitter - The Collector's event emitter
+ * @return {Object[]} An array of review objects
+ */
 function htmlToReviews(html, appId, emitter) {
 	try {
 		const $ = cheerio.load(html);
