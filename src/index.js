@@ -242,7 +242,7 @@ function formToString(form) {
 		if (i > 0) {
 			str += '&';
 		}
-		str += `${keys[i]}=${form[keys[i]]}`;
+		str += `${encodeURIComponent(keys[i])}=${encodeURIComponent(form[keys[i]])}`;
 	}
 	return str;
 }
