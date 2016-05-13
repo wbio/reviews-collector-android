@@ -93,6 +93,7 @@ class Collector {
 				try {
 					const $ = cheerio.load(html);
 					const reviewObjs = $('.single-review');
+					const reviews = [];
 					let i;
 					// Get the reviews
 					for (i = 0; i < reviewObjs.length; i++) {
@@ -126,16 +127,21 @@ class Collector {
 							.end()
 							.text()
 							.trim();
-
+						// Add it to our reviews array
+						reviews.push(review);
 						// Let our listener(s) know
 						self.emitter.emit('review', review);
 					}
+					// Let our listener(s) know we finished a page
+					self.emitter.emit('page complete', reviews);
 					// Reset retries
 					self.retries = 0;
 					// Queue the next page if we're allowed
 					const nextPage = pageNum + 1;
 					if (nextPage < self.options.maxPages - 1) {
 						queue(nextPage);
+					} else {
+						self.emitter.emit('done collecting');
 					}
 				} catch (err) {
 					console.error(`Could not turn response into reviews: ${err}`);
