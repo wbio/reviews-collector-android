@@ -37,6 +37,7 @@ class Collector {
 		const c = new Crawler({
 			maxConnections: 1,
 			rateLimits: self.options.delay,
+			userAgent: self.options.userAgent,
 			followRedirect: true,
 			followAllRedirects: true,
 			callback: function processRequest(error, result) {
