@@ -31,6 +31,7 @@ describe('integration testing', () => {
 		it('should result in some reviews', () => {
 			expect(reviews).to.exist;
 			expect(_.isArray(reviews)).to.be.true;
+			expect(reviews.length).to.be.at.least(1);
 		});
 
 		it('should not result in an error', () => {
