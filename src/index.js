@@ -90,49 +90,11 @@ class Collector {
 				self.emitter.emit('done collecting', null);
 			} else if (typeof html === 'string') {
 				// We got a valid response, proceed
-				try {
-					const $ = cheerio.load(html);
-					const reviewObjs = $('.single-review');
-					const reviews = [];
-					let i;
-					// Get the reviews
-					for (i = 0; i < reviewObjs.length; i++) {
-						const review = {};
-						const reviewObj = $(reviewObjs[i]);
-						const reviewInfo = $(reviewObj).find('.review-info');
-						const reviewBody = $(reviewObj).children('.review-body');
-						// App Information
-						review.appId = self.appId;
-						review.os = 'Android';
-						review.device = 'Android';
-						review.type = 'review';
-						// Review ID
-						const id = reviewObj.children('.review-header').attr('data-reviewid');
-						review.id = id;
-						// Review Date
-						const dateStr = $(reviewInfo).children('.review-date').text();
-						review.date = new Date(dateStr);
-						// Review Rating
-						const ratingStr = $(reviewInfo).find('.current-rating').attr('style');
-						const widthRegex = /width: ([0-9]{2,3})%/;
-						review.rating = Number(widthRegex.exec(ratingStr)[1]) / 20;
-						// Review Title
-						review.title = $(reviewBody).children('.review-title').text().trim();
-						// Review Text
-						review.text = $(reviewBody)
-							.clone()
-							.children()
-							.remove()
-							.end()
-							.text()
-							.trim();
-						// Add it to our reviews array
-						reviews.push(review);
-						// Let our listener(s) know
-						self.emitter.emit('review', review);
-					}
-					// Let our listener(s) know we finished a page
-					self.emitter.emit('page complete', reviews);
+				const converted = htmlToReviews(html, self.appId, self.emitter);
+				if (converted.error) {
+					console.error(`Could not turn response into reviews: ${converted.error}`);
+					requeue(pageNum);
+				} else {
 					// Reset retries
 					self.retries = 0;
 					// Queue the next page if we're allowed
@@ -142,9 +104,6 @@ class Collector {
 					} else {
 						self.emitter.emit('done collecting');
 					}
-				} catch (err) {
-					console.error(`Could not turn response into reviews: ${err}`);
-					requeue(pageNum);
 				}
 			}
 		}
@@ -174,6 +133,55 @@ class Collector {
 
 }
 module.exports = Collector;
+
+function htmlToReviews(html, appId, emitter) {
+	try {
+		const $ = cheerio.load(html);
+		const reviewObjs = $('.single-review');
+		const reviews = [];
+		// Get the reviews
+		_.forEach(reviewObjs, (reviewObj) => {
+			const review = {};
+			const reviewInfo = $(reviewObj).find('.review-info');
+			const reviewBody = $(reviewObj).children('.review-body');
+			// App Information
+			review.appId = appId;
+			review.os = 'Android';
+			review.device = 'Android';
+			review.type = 'review';
+			// Review ID
+			const id = $(reviewObj).children('.review-header').attr('data-reviewid');
+			review.id = id;
+			// Review Date
+			const dateStr = $(reviewInfo).children('.review-date').text();
+			review.date = new Date(dateStr);
+			// Review Rating
+			const ratingStr = $(reviewInfo).find('.current-rating').attr('style');
+			const widthRegex = /width: ([0-9]{2,3})%/;
+			review.rating = Number(widthRegex.exec(ratingStr)[1]) / 20;
+			// Review Title
+			review.title = $(reviewBody).children('.review-title').text().trim();
+			// Review Text
+			review.text = $(reviewBody)
+				.clone()
+				.children()
+				.remove()
+				.end()
+				.text()
+				.trim();
+			// Add it to our reviews array
+			reviews.push(review);
+			// Let our listener(s) know
+			emitter.emit('review', review);
+		});
+		// Let our listener(s) know we finished a page
+		emitter.emit('page complete', reviews);
+		// Return our reviews
+		return { reviews: reviews };
+	} catch (err) {
+		return { error: err };
+	}
+}
 
 /**
  * Extract the HTML from the HTTP request's response
