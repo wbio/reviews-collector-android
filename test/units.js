@@ -32,52 +32,54 @@ const invalidResponse = fs.readFileSync(`${fixturesDir}/invalid.txt`, 'utf8');
 const noReviewsResponse = fs.readFileSync(`${fixturesDir}/noreviews.txt`, 'utf8');
 
 /* eslint-disable no-undef, max-len */
-describe('parsing response to HTML', () => {
-	it('should parse a valid response where content-type == JSON and reviews are present as a string', () => {
-		const response = {
-			headers: {
-				'content-type': 'application/json; charset=utf-8',
-			},
-			body: validResponse,
-		};
-		const val = Collector.__get__('responseToHtml')(response);
-		expect(typeof val).to.equal('string');
-	});
+describe('unit testing', () => {
+	describe('parsing response to HTML', () => {
+		it('should parse a valid response where content-type == JSON and reviews are present as a string', () => {
+			const response = {
+				headers: {
+					'content-type': 'application/json; charset=utf-8',
+				},
+				body: validResponse,
+			};
+			const val = Collector.__get__('responseToHtml')(response);
+			expect(typeof val).to.equal('string');
+		});
 
-	it('should parse a valid response where content-type == JSON and reviews are not present as null', () => {
-		const response = {
-			headers: {
-				'content-type': 'application/json; charset=utf-8',
-			},
-			body: noReviewsResponse,
-		};
-		const val = Collector.__get__('responseToHtml')(response);
-		expect(val).to.equal(null);
-		expect(logSpy).to.be.calledWith('No more reviews for this app');
-	});
+		it('should parse a valid response where content-type == JSON and reviews are not present as null', () => {
+			const response = {
+				headers: {
+					'content-type': 'application/json; charset=utf-8',
+				},
+				body: noReviewsResponse,
+			};
+			const val = Collector.__get__('responseToHtml')(response);
+			expect(val).to.equal(null);
+			expect(logSpy).to.be.calledWith('No more reviews for this app');
+		});
 
-	it('should parse a valid response where content-type == JSON as undefined', () => {
-		const response = {
-			headers: {
-				'content-type': 'application/json; charset=utf-8',
-			},
-			body: invalidResponse,
-		};
-		const val = Collector.__get__('responseToHtml')(response);
-		expect(typeof val).to.equal('undefined');
-		expect(errSpy).to.be.calledWith('Unexpected response - JSON was invalid');
-	});
+		it('should parse a valid response where content-type == JSON as undefined', () => {
+			const response = {
+				headers: {
+					'content-type': 'application/json; charset=utf-8',
+				},
+				body: invalidResponse,
+			};
+			const val = Collector.__get__('responseToHtml')(response);
+			expect(typeof val).to.equal('undefined');
+			expect(errSpy).to.be.calledWith('Unexpected response - JSON was invalid');
+		});
 
-	it('should parse a valid response where content-type != JSON as undefined', () => {
-		const response = {
-			headers: {
-				'content-type': 'text/html; charset=utf-8',
-			},
-			body: invalidResponse,
-		};
-		const val = Collector.__get__('responseToHtml')(response);
-		expect(typeof val).to.equal('undefined');
-		expect(errSpy).to.be.calledWith('Unexpected response - was not in JSON format');
+		it('should parse a valid response where content-type != JSON as undefined', () => {
+			const response = {
+				headers: {
+					'content-type': 'text/html; charset=utf-8',
+				},
+				body: invalidResponse,
+			};
+			const val = Collector.__get__('responseToHtml')(response);
+			expect(typeof val).to.equal('undefined');
+			expect(errSpy).to.be.calledWith('Unexpected response - was not in JSON format');
+		});
 	});
 });
 /* eslint-enable no-undef, max-len */
