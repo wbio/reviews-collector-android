@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/%3Awbio/reviews-collector-android.git"
+    "url": "git://github.com/wbio/reviews-collector-android.git"
   },
-  "author": "Will Bogey <bogeywm@gmail.com> (http://www.BetPhD.com)",
+  "author": "Will Bogey <bogeywm@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/%3Awbio/reviews-collector-android/issues"
+    "url": "https://github.com/wbio/reviews-collector-android/issues"
   },
-  "homepage": "https://github.com/%3Awbio/reviews-collector-android#readme",
+  "homepage": "https://github.com/wbio/reviews-collector-android#readme",
   "dependencies": {
     "cheerio": "^0.20.0",
     "lodash": "^4.12.0",
