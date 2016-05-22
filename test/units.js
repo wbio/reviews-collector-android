@@ -100,7 +100,7 @@ describe('unit testing', () => {
 		};
 
 		it('should parse valid HTML into an array of reviews', () => {
-			const converted = Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', fakeEmitter);
+			const converted = Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, fakeEmitter);
 			expect(converted).to.be.an('object');
 			expect(converted).to.have.a.property('reviews');
 			expect(converted).to.not.have.a.property('error');
@@ -109,7 +109,7 @@ describe('unit testing', () => {
 		});
 
 		it('should parse invalid HTML into an empty array of reviews', () => {
-			const converted = Collector.__get__('htmlToReviews')(invalidHtml, 'an.app.id', fakeEmitter);
+			const converted = Collector.__get__('htmlToReviews')(invalidHtml, 'an.app.id', 0, fakeEmitter);
 			expect(converted).to.be.an('object');
 			expect(converted).to.have.a.property('reviews');
 			expect(converted).to.not.have.a.property('error');
@@ -123,7 +123,7 @@ describe('unit testing', () => {
 			const emitter = new EventEmitter();
 			emitter.on('review', emitterSpy);
 			// Call the method
-			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', emitter);
+			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, emitter);
 			expect(emitterSpy.callCount).to.equal(40);
 		});
 
@@ -133,7 +133,7 @@ describe('unit testing', () => {
 			const emitter = new EventEmitter();
 			emitter.on('page complete', emitterSpy);
 			// Call the method
-			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', emitter);
+			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, emitter);
 			expect(emitterSpy).to.be.calledOnce;
 		});
 	});

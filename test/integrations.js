@@ -9,17 +9,17 @@ describe('integration testing', () => {
 	describe('parsing the current version of the Google Play store', () => {
 		// Use Google Maps because we shouldn't have to worry about it going away
 		const collector = new Collector('com.google.android.apps.maps', { maxPages: 1 });
-		let reviews;
+		let result;
 		let hadError;
 
 		before((done) => {
 			collector.on('page complete', (pageReviews) => {
-				reviews = pageReviews;
+				result = pageReviews;
 				done();
 			});
 
 			collector.on('done collecting', (err) => {
-				if (typeof reviews === 'undefined' && err) {
+				if (typeof result === 'undefined' && err) {
 					hadError = true;
 					done();
 				}
@@ -29,9 +29,10 @@ describe('integration testing', () => {
 		});
 
 		it('should result in some reviews', () => {
-			expect(reviews).to.exist;
-			expect(_.isArray(reviews)).to.be.true;
-			expect(reviews.length).to.be.at.least(1);
+			expect(result).to.exist;
+			expect(result).to.have.a.property('reviews');
+			expect(_.isArray(result.reviews)).to.be.true;
+			expect(result.reviews.length).to.be.at.least(1);
 		});
 
 		it('should not result in an error', () => {
@@ -39,7 +40,7 @@ describe('integration testing', () => {
 		});
 
 		it('should include values for (almost) all fields', () => {
-			expect(_.isArray(reviews)).to.be.true;
+			expect(_.isArray(result.reviews)).to.be.true;
 			const fields = {
 				appId: 0,
 				os: 0,
@@ -52,7 +53,7 @@ describe('integration testing', () => {
 				text: 0,
 			};
 			// Add up the number of times each field was present
-			_.forEach(reviews, (review) => {
+			_.forEach(result.reviews, (review) => {
 				if (review.appId) { fields.appId++; }
 				if (review.os) { fields.os++; }
 				if (review.device) { fields.device++; }
@@ -63,7 +64,7 @@ describe('integration testing', () => {
 				if (review.title) { fields.title++; }
 				if (review.text) { fields.text++; }
 			});
-			const numReviews = reviews.length;
+			const numReviews = result.reviews.length;
 			// Check all of the mandatory fields
 			expect(fields.appId).to.equal(numReviews);
 			expect(fields.os).to.equal(numReviews);
