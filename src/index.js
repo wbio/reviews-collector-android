@@ -88,10 +88,13 @@ class Collector {
 				requeue(pageNum);
 			} else if (html === null) {
 				// There were no more reviews
-				self.emitter.emit('done collecting', null);
+				self.emitter.emit('done collecting', {
+					appId: self.appId,
+					pageNum: pageNum,
+				});
 			} else if (typeof html === 'string') {
 				// We got a valid response, proceed
-				const converted = htmlToReviews(html, self.appId, self.emitter);
+				const converted = htmlToReviews(html, self.appId, pageNum, self.emitter);
 				if (converted.error) {
 					console.error(`Could not turn response into reviews: ${converted.error}`);
 					requeue(pageNum);
@@ -103,7 +106,10 @@ class Collector {
 					if (converted.reviews.length > 0 && nextPage < self.options.maxPages - 1) {
 						queue(nextPage);
 					} else {
-						self.emitter.emit('done collecting');
+						self.emitter.emit('done collecting', {
+							appId: self.appId,
+							pageNum: pageNum,
+						});
 					}
 				}
 			}
@@ -118,7 +124,11 @@ class Collector {
 			if (self.retries < self.options.maxRetries) {
 				queue(pageNum);
 			} else {
-				self.emitter.emit('done collecting', new Error('Retry limit reached'));
+				self.emitter.emit('done collecting', {
+					appId: self.appId,
+					pageNum: pageNum,
+					error: new Error('Retry limit reached'),
+				});
 			}
 		}
 	}
@@ -142,7 +152,7 @@ module.exports = Collector;
  * @param {EventEmitter} emitter - The Collector's event emitter
  * @return {Object[]} An array of review objects
  */
-function htmlToReviews(html, appId, emitter) {
+function htmlToReviews(html, appId, pageNum, emitter) {
 	try {
 		const $ = cheerio.load(html);
 		const reviewObjs = $('.single-review');
@@ -180,10 +190,18 @@ function htmlToReviews(html, appId, emitter) {
 			// Add it to our reviews array
 			reviews.push(review);
 			// Let our listener(s) know
-			emitter.emit('review', review);
+			emitter.emit('review', {
+				appId: appId,
+				pageNum: pageNum,
+				review: review,
+			});
 		});
 		// Let our listener(s) know we finished a page
-		emitter.emit('page complete', reviews);
+		emitter.emit('page complete', {
+			appId: appId,
+			pageNum: pageNum,
+			reviews: reviews,
+		});
 		// Return our reviews
 		return { reviews: reviews };
 	} catch (err) {
