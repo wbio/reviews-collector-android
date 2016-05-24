@@ -167,8 +167,11 @@ class Collector {
 				self.emitter.emit('done collecting', {
 					appId: currentApp,
 					pageNum: currentPage,
+					appsRemaining: appIds.length,
 					error: new Error('Retry limit reached'),
 				});
+				// Move on to the next app
+				processNextApp();
 			}
 		}
 
@@ -185,6 +188,7 @@ class Collector {
 		 * Stop processing the current app and go on to the next app
 		 */
 		function stopProcessingApp() {
+			// Emit the 'done collecting' event
 			self.emitter.emit('done collecting', {
 				appId: currentApp,
 				pageNum: currentPage,
