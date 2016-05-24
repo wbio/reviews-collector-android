@@ -130,11 +130,3 @@ collector.collect();
 ```
 
 The Collector will then collect reviews until it reaches one of the stop points described in the `done collecting` event (see above)
-
-
-## To Do:
-
-- Use request instead of node-webcrawler
-- Allow for multiple app IDs in a single Collector (create a map of appIDs + emit the appId)
-- Allow user to determine whether or not to keep going after each page (if desired)
-- Move these to GitHub Issues
