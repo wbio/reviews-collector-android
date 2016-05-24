@@ -17,6 +17,11 @@ node_js:
   - "0.10"
   - "iojs"
 
+script: "npm run test-travis"
+
+after_script:
+  - codeclimate-test-reporter < coverage/lcov.info
+
 addons:
     code_climate:
         repo_token: ddcb9c76db9f8ec90db2b713427c5a2713609f3a4c68bc11b9c1ad423839de04
