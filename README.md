@@ -65,6 +65,9 @@ Where the arguments are:
 - `App ID` *(string|string[])*: The portion after the `id=` section of the URL in the Google Play Store (e.g. the app ID for this URL - `https://play.google.com/store/apps/details?id=com.google.android.apps.maps&hl=en` - would be `com.google.android.apps.maps`). You can pass a single app ID as a string, or multiple app IDs as an array of strings
 - `Options` *(Object)*: An object with any (or none) of the following properties:
   - `maxPages` *(Default 5)*: The maximum number of pages of reviews to parse. Use 0 for unlimited
+  - `checkBeforeContinue` *(Default false)*: When true, the `page complete` event will have both a `continue` and a `stop` function as properties of the object emitted on the event (details below). One of these must be called before the collector will proceed. This is useful when you want to, for example, check to see if the reviews already exist in your database or if they were created in the last X days, etc. **Note:** When this is set to true, `maxPages` will be ignored
+     - `continue()` - Keep processing this app if possible
+     - `stop()` - Stop processing this app and move onto the next one, if applicable
   - `userAgent` *(Default Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36)*: The user agent string to use when making requests
   - `delay` *(Default 5000)*: The delay (in milliseconds) between page requests
   - `maxRetries` *(Default 3)*: The maximum number of times to retry a page that could not be parsed before giving up
@@ -100,7 +103,10 @@ Where the event name is one of:
 	{
 		appId: '<APP_ID>',
 		pageNum: '<PAGE_NUMBER>',
-		reviews: [ /* Review objects */ ]
+		reviews: [ /* Review objects */ ],
+		// If the 'checkBeforeContinue' option is set to true:
+		continue: function() { /* Continue processing app */ },
+		stop: function() { /* Stop processing app */ }
 	}
     ```
 - `'done collecting'`
