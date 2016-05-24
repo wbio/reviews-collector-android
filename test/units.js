@@ -126,16 +126,6 @@ describe('unit testing', () => {
 			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, emitter);
 			expect(emitterSpy.callCount).to.equal(40);
 		});
-
-		it('should emit a "page complete" event at the end of the page', () => {
-			// Set up our spy on the event emitter
-			const emitterSpy = sinon.spy();
-			const emitter = new EventEmitter();
-			emitter.on('page complete', emitterSpy);
-			// Call the method
-			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, emitter);
-			expect(emitterSpy).to.be.calledOnce;
-		});
 	});
 
 	describe('miscellaneous functions', () => {
