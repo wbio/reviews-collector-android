@@ -4,6 +4,7 @@ const Crawler = require('node-webcrawler');
 const cheerio = require('cheerio');
 const _ = require('lodash');
 const EventEmitter = require('events').EventEmitter;
+const firstPage = 0;
 
 
 class Collector {
@@ -13,7 +14,7 @@ class Collector {
 	 * @param {string} appId - The app ID to collect reviews for
 	 * @param {Object} options - Configuration options for the review collection
 	 */
-	constructor(appId, options) {
+	constructor(apps, options) {
 		const defaults = {
 			maxPages: 5,
 			userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36',
@@ -21,9 +22,29 @@ class Collector {
 			maxRetries: 3,
 		};
 		this.options = _.assign(defaults, options);
-		this.appId = appId;
+		this.apps = {};
+		if (_.isArray(apps)) {
+			_.forEach(apps, (appId) => {
+				if (typeof appId !== 'string') {
+					throw new Error('App IDs must be strings');
+				}
+				this.apps[appId] = {
+					appId: appId,
+					retries: 0,
+					pageNum: firstPage,
+				};
+			});
+		} else if (_.isString(apps)) {
+			// 'apps' is a single app ID string
+			this.apps[apps] = {
+				appId: apps,
+				retries: 0,
+				pageNum: firstPage,
+			};
+		} else {
+			throw new Error('You must provide either a string or an array for the \'apps\' argument');
+		}
 		this.emitter = new EventEmitter();
-		this.retries = 0;
 	}
 
 	/**
@@ -32,6 +53,11 @@ class Collector {
 	collect() {
 		// Preserve our reference to 'this'
 		const self = this;
+		// Get a list of app IDs
+		const appIds = _.keys(self.apps);
+		// Keep track of what we're processing
+		let currentApp;
+		let currentPage;
 
 		// Setup the Crawler instance
 		const c = new Crawler({
@@ -43,22 +69,35 @@ class Collector {
 			callback: function processRequest(error, result) {
 				if (error) {
 					console.error(`Could not complete the request: ${error}`);
-					requeue(result.options.pageNum);
+					requeue();
 				} else {
-					parse(result, result.options.pageNum);
+					parse(result);
 				}
 			},
 		});
 
-		// Queue the first page
-		queue(0);
+		// Queue the first app
+		processNextApp();
+
+		/**
+		 * Collect reviews for the next app in the list (if one exists)
+		 */
+		function processNextApp() {
+			if (appIds.length > 0) {
+				currentApp = appIds.shift();
+				currentPage = firstPage;
+				queuePage();
+			} else {
+				self.emitter.emit('done with apps');
+			}
+		}
 
 		/**
 		 * Add a page to the Crawler queue to be parsed
 		 * @param {number} pageNum - The page number to be collected (0-indexed)
 		 */
-		function queue(pageNum) {
-			const url = `https://play.google.com/store/getreviews?id=${self.appId}&reviewSortOrder=0&reviewType=1&pageNum=${pageNum}`;
+		function queuePage() {
+			const url = `https://play.google.com/store/getreviews?id=${currentApp}&reviewSortOrder=0&reviewType=1&pageNum=${currentPage}`;
 			const postData = {
 				xhr: '1',
 			};
@@ -72,7 +111,6 @@ class Collector {
 					'Content-Length': formToString(postData).length,
 				},
 				form: postData,
-				pageNum: pageNum,
 			});
 		}
 
@@ -81,35 +119,35 @@ class Collector {
 		 * @param {string} result - The page HTML
 		 * @param {number} pageNum - The number of the page that is being parsed
 		 */
-		function parse(result, pageNum) {
+		function parse(result) {
 			const html = responseToHtml(result);
 			if (typeof html === 'undefined') {
 				// We got an invalid response
-				requeue(pageNum);
+				requeue();
 			} else if (html === null) {
 				// There were no more reviews
 				self.emitter.emit('done collecting', {
-					appId: self.appId,
-					pageNum: pageNum,
+					appId: currentApp,
+					pageNum: currentPage,
 				});
 			} else if (typeof html === 'string') {
 				// We got a valid response, proceed
-				const converted = htmlToReviews(html, self.appId, pageNum, self.emitter);
+				const converted = htmlToReviews(html, currentApp, currentPage, self.emitter);
 				if (converted.error) {
 					console.error(`Could not turn response into reviews: ${converted.error}`);
-					requeue(pageNum);
+					requeue();
 				} else {
 					// Reset retries
-					self.retries = 0;
-					// Queue the next page if we're allowed
-					const nextPage = pageNum + 1;
-					if (converted.reviews.length > 0 && nextPage < self.options.maxPages - 1) {
-						queue(nextPage);
+					self.apps[currentApp].retries = 0;
+					if (converted.reviews.length > 0 &&
+						(
+							self.options.maxPages === 0 ||
+							currentPage + 1 < self.options.maxPages + firstPage
+						)
+					) {
+						continueProcessingApp();
 					} else {
-						self.emitter.emit('done collecting', {
-							appId: self.appId,
-							pageNum: pageNum,
-						});
+						stopProcessingApp();
 					}
 				}
 			}
@@ -119,17 +157,39 @@ class Collector {
 		 * Requeue a page if we aren't over the retries limit
 		 * @param {number} pageNum - The number of the page to requeue
 		 */
-		function requeue(pageNum) {
-			self.retries++;
-			if (self.retries < self.options.maxRetries) {
-				queue(pageNum);
+		function requeue() {
+			self.apps[currentApp].retries++;
+			if (self.apps[currentApp].retries < self.options.maxRetries) {
+				queuePage();
 			} else {
 				self.emitter.emit('done collecting', {
-					appId: self.appId,
-					pageNum: pageNum,
+					appId: currentApp,
+					pageNum: currentPage,
 					error: new Error('Retry limit reached'),
 				});
 			}
+		}
+
+		/**
+		 * Process the next page of the current app
+		 */
+		function continueProcessingApp() {
+			// Increment currentPage and queue it
+			currentPage++;
+			queuePage();
+		}
+
+		/**
+		 * Stop processing the current app and go on to the next app
+		 */
+		function stopProcessingApp() {
+			self.emitter.emit('done collecting', {
+				appId: currentApp,
+				pageNum: currentPage,
+				appsRemaining: appIds.length,
+			});
+			// Move on to the next app
+			processNextApp();
 		}
 	}
 
