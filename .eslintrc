@@ -7,7 +7,8 @@
 		"object-shorthand": 0,
 		"max-len": [2, 100, 2, {
 			"ignoreUrls": true,
-			"ignoreComments": true
+			"ignoreComments": true,
+			"ignorePattern": "^\\s*console\\..*"
 		}],
 		"no-console": 0
 	}
