@@ -91,7 +91,7 @@ class Collector {
 				currentPage = firstPage;
 				queuePage();
 			} else {
-				self.emitter.emit('done with apps');
+				emit('done with apps');
 			}
 		}
 
@@ -132,13 +132,13 @@ class Collector {
 				requeue();
 			} else if (html === null) {
 				// There were no more reviews
-				self.emitter.emit('done collecting', {
+				emit('done collecting', {
 					appId: currentApp,
 					pageNum: currentPage,
 				});
 			} else if (typeof html === 'string') {
 				// We got a valid response, proceed
-				const converted = htmlToReviews(html, currentApp, currentPage, self.emitter);
+				const converted = htmlToReviews(html, currentApp, currentPage, emit);
 				if (converted.error) {
 					console.error(`Could not turn response into reviews: ${converted.error}`);
 					requeue();
@@ -170,7 +170,7 @@ class Collector {
 						}
 					}
 					// Emit the object
-					self.emitter.emit('page complete', objToEmit);
+					emit('page complete', objToEmit);
 					// If we don't have to wait for the user to tell us to continue, we can do it ourselves
 					if (!self.options.checkBeforeContinue) {
 						if (numReviewsFound > 0 &&
@@ -197,7 +197,7 @@ class Collector {
 			if (self.apps[currentApp].retries < self.options.maxRetries) {
 				queuePage();
 			} else {
-				self.emitter.emit('done collecting', {
+				emit('done collecting', {
 					appId: currentApp,
 					pageNum: currentPage,
 					appsRemaining: appIds.length,
@@ -231,7 +231,7 @@ class Collector {
 				// Set nextStepDecided to true
 				nextStepDecided = true;
 				// Emit the 'done collecting' event
-				self.emitter.emit('done collecting', {
+				emit('done collecting', {
 					appId: currentApp,
 					pageNum: currentPage,
 					appsRemaining: appIds.length,
@@ -239,6 +239,18 @@ class Collector {
 				// Move on to the next app
 				processNextApp();
 			}
+		}
+
+		/**
+		 * Emit a message with the event emitter
+		 * @param {string} event - The event to emit
+		 * @param {Object} obj - The object to emit with the event
+		 */
+		function emit(event, obj) {
+			const toEmit = obj || {};
+			// Add the OS to the emit message
+			toEmit.os = 'Android';
+			self.emitter.emit(event, toEmit);
 		}
 	}
 
@@ -258,10 +270,10 @@ module.exports = Collector;
  * Convert HTML extracted from the reviews JSON object into an array of reviews
  * @param {string} html - The HTML extracted via #responseToHtml
  * @param {string} appId - The app ID of the app that the given HTML is from
- * @param {EventEmitter} emitter - The Collector's event emitter
+ * @param {Function} emit - The collector's emit() function
  * @return {Object[]} An array of review objects
  */
-function htmlToReviews(html, appId, pageNum, emitter) {
+function htmlToReviews(html, appId, pageNum, emit) {
 	try {
 		const $ = cheerio.load(html);
 		const reviewObjs = $('.single-review');
@@ -299,7 +311,7 @@ function htmlToReviews(html, appId, pageNum, emitter) {
 			// Add it to our reviews array
 			reviews.push(review);
 			// Let our listener(s) know
-			emitter.emit('review', {
+			emit('review', {
 				appId: appId,
 				pageNum: pageNum,
 				review: review,

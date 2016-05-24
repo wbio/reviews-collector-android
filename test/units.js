@@ -100,7 +100,7 @@ describe('unit testing', () => {
 		};
 
 		it('should parse valid HTML into an array of reviews', () => {
-			const converted = Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, fakeEmitter);
+			const converted = Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, fakeEmitter.emit);
 			expect(converted).to.be.an('object');
 			expect(converted).to.have.a.property('reviews');
 			expect(converted).to.not.have.a.property('error');
@@ -109,7 +109,7 @@ describe('unit testing', () => {
 		});
 
 		it('should parse invalid HTML into an empty array of reviews', () => {
-			const converted = Collector.__get__('htmlToReviews')(invalidHtml, 'an.app.id', 0, fakeEmitter);
+			const converted = Collector.__get__('htmlToReviews')(invalidHtml, 'an.app.id', 0, fakeEmitter.emit);
 			expect(converted).to.be.an('object');
 			expect(converted).to.have.a.property('reviews');
 			expect(converted).to.not.have.a.property('error');
@@ -120,10 +120,8 @@ describe('unit testing', () => {
 		it('should emit a "review" event for each review', () => {
 			// Set up our spy on the event emitter
 			const emitterSpy = sinon.spy();
-			const emitter = new EventEmitter();
-			emitter.on('review', emitterSpy);
 			// Call the method
-			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, emitter);
+			Collector.__get__('htmlToReviews')(validHtml, 'an.app.id', 0, emitterSpy);
 			expect(emitterSpy.callCount).to.equal(40);
 		});
 	});
