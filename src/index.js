@@ -62,7 +62,6 @@ class Collector {
 		// Setup the Crawler instance
 		const c = new Crawler({
 			maxConnections: 1,
-			rateLimits: self.options.delay,
 			userAgent: self.options.userAgent,
 			followRedirect: true,
 			followAllRedirects: true,
@@ -97,21 +96,24 @@ class Collector {
 		 * @param {number} pageNum - The page number to be collected (0-indexed)
 		 */
 		function queuePage() {
-			const url = `https://play.google.com/store/getreviews?id=${currentApp}&reviewSortOrder=0&reviewType=1&pageNum=${currentPage}`;
-			const postData = {
-				xhr: '1',
-			};
-			// Add the url to the Crawler queue
-			c.queue({
-				uri: url,
-				method: 'POST',
-				headers: {
-					'User-Agent': self.options.userAgent,
-					'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-					'Content-Length': formToString(postData).length,
-				},
-				form: postData,
-			});
+			// Delay the request for the specified # of milliseconds
+			setTimeout(() => {
+				const url = `https://play.google.com/store/getreviews?id=${currentApp}&reviewSortOrder=0&reviewType=1&pageNum=${currentPage}`;
+				const postData = {
+					xhr: '1',
+				};
+				// Add the url to the Crawler queue
+				c.queue({
+					uri: url,
+					method: 'POST',
+					headers: {
+						'User-Agent': self.options.userAgent,
+						'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+						'Content-Length': formToString(postData).length,
+					},
+					form: postData,
+				});
+			}, self.options.delay);
 		}
 
 		/**
