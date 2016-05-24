@@ -152,6 +152,11 @@ class Collector {
 						pageNum: currentPage,
 						reviews: converted.reviews,
 					};
+					// Set the firstReviewTime and lastReviewTime
+					if (numReviewsFound > 0) {
+						objToEmit.firstReviewTime = converted.reviews[numReviewsFound - 1].date;
+						objToEmit.lastReviewTime = converted.reviews[0].date;
+					}
 					// Reset nextStepDecided
 					nextStepDecided = false;
 					if (self.options.checkBeforeContinue) {
