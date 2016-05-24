@@ -15,6 +15,9 @@ class Collector {
 	 * @param {Object} options - Configuration options for the review collection
 	 */
 	constructor(apps, options) {
+		if (options && options.maxPages && options.checkBeforeContine) {
+			console.error('Warning: The \'maxPages\' option will be ignored when \'checkBeforeContine\' is present');
+		}
 		const defaults = {
 			maxPages: 5,
 			userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36',
@@ -58,6 +61,7 @@ class Collector {
 		// Keep track of what we're processing
 		let currentApp;
 		let currentPage;
+		let nextStepDecided;	// Whether or not 'continue()' or 'stop()' has been called
 
 		// Setup the Crawler instance
 		const c = new Crawler({
@@ -139,17 +143,41 @@ class Collector {
 					console.error(`Could not turn response into reviews: ${converted.error}`);
 					requeue();
 				} else {
+					const numReviewsFound = converted.reviews.length;
 					// Reset retries
 					self.apps[currentApp].retries = 0;
-					if (converted.reviews.length > 0 &&
-						(
-							self.options.maxPages === 0 ||
-							currentPage + 1 < self.options.maxPages + firstPage
-						)
-					) {
-						continueProcessingApp();
-					} else {
-						stopProcessingApp();
+					// Let our listener(s) know we finished a page
+					const objToEmit = {
+						appId: currentApp,
+						pageNum: currentPage,
+						reviews: converted.reviews,
+					};
+					// Reset nextStepDecided
+					nextStepDecided = false;
+					if (self.options.checkBeforeContine) {
+						// stop() should always call stopProcessingApp()
+						objToEmit.stop = stopProcessingApp;
+						// If we had reviews, user can continue, if not, calling continue should move to next app
+						if (numReviewsFound > 0) {
+							objToEmit.continue = continueProcessingApp;
+						} else {
+							objToEmit.continue = stopProcessingApp;
+						}
+					}
+					// Emit the object
+					self.emitter.emit('page complete', objToEmit);
+					// If we don't have to wait for the user to tell us to continue, we can do it ourselves
+					if (!self.options.checkBeforeContine) {
+						if (numReviewsFound > 0 &&
+							(
+								self.options.maxPages === 0 ||
+								currentPage + 1 < self.options.maxPages + firstPage
+							)
+						) {
+							continueProcessingApp();
+						} else {
+							stopProcessingApp();
+						}
 					}
 				}
 			}
@@ -179,23 +207,33 @@ class Collector {
 		 * Process the next page of the current app
 		 */
 		function continueProcessingApp() {
-			// Increment currentPage and queue it
-			currentPage++;
-			queuePage();
+			// Make sure that the user doesn't call both stop() and continue() for the same page
+			if (!nextStepDecided) {
+				// Set nextStepDecided to true
+				nextStepDecided = true;
+				// Increment currentPage and queue it
+				currentPage++;
+				queuePage();
+			}
 		}
 
 		/**
 		 * Stop processing the current app and go on to the next app
 		 */
 		function stopProcessingApp() {
-			// Emit the 'done collecting' event
-			self.emitter.emit('done collecting', {
-				appId: currentApp,
-				pageNum: currentPage,
-				appsRemaining: appIds.length,
-			});
-			// Move on to the next app
-			processNextApp();
+			// Make sure that the user doesn't call both stop() and continue() for the same page
+			if (!nextStepDecided) {
+				// Set nextStepDecided to true
+				nextStepDecided = true;
+				// Emit the 'done collecting' event
+				self.emitter.emit('done collecting', {
+					appId: currentApp,
+					pageNum: currentPage,
+					appsRemaining: appIds.length,
+				});
+				// Move on to the next app
+				processNextApp();
+			}
 		}
 	}
 
@@ -261,12 +299,6 @@ function htmlToReviews(html, appId, pageNum, emitter) {
 				pageNum: pageNum,
 				review: review,
 			});
-		});
-		// Let our listener(s) know we finished a page
-		emitter.emit('page complete', {
-			appId: appId,
-			pageNum: pageNum,
-			reviews: reviews,
 		});
 		// Return our reviews
 		return { reviews: reviews };
