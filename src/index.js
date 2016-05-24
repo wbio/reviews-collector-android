@@ -15,8 +15,8 @@ class Collector {
 	 * @param {Object} options - Configuration options for the review collection
 	 */
 	constructor(apps, options) {
-		if (options && options.maxPages && options.checkBeforeContine) {
-			console.error('Warning: The \'maxPages\' option will be ignored when \'checkBeforeContine\' is present');
+		if (options && options.maxPages && options.checkBeforeContinue) {
+			console.error('Warning: The \'maxPages\' option will be ignored when \'checkBeforeContinue\' is present');
 		}
 		const defaults = {
 			maxPages: 5,
@@ -154,7 +154,7 @@ class Collector {
 					};
 					// Reset nextStepDecided
 					nextStepDecided = false;
-					if (self.options.checkBeforeContine) {
+					if (self.options.checkBeforeContinue) {
 						// stop() should always call stopProcessingApp()
 						objToEmit.stop = stopProcessingApp;
 						// If we had reviews, user can continue, if not, calling continue should move to next app
@@ -167,7 +167,7 @@ class Collector {
 					// Emit the object
 					self.emitter.emit('page complete', objToEmit);
 					// If we don't have to wait for the user to tell us to continue, we can do it ourselves
-					if (!self.options.checkBeforeContine) {
+					if (!self.options.checkBeforeContinue) {
 						if (numReviewsFound > 0 &&
 							(
 								self.options.maxPages === 0 ||
