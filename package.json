@@ -13,7 +13,11 @@
     "type": "git",
     "url": "git://github.com/wbio/reviews-collector-android.git"
   },
-  "author": "Will Bogey <bogeywm@gmail.com>",
+  "author": {
+    "email": "bogeywm@gmail.com",
+    "name": "Will Bogey",
+    "url": "http://github.com/wbio"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/wbio/reviews-collector-android/issues"
