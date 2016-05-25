@@ -283,11 +283,6 @@ function htmlToReviews(html, appId, pageNum, emit) {
 			const review = {};
 			const reviewInfo = $(reviewObj).find('.review-info');
 			const reviewBody = $(reviewObj).children('.review-body');
-			// App Information
-			review.appId = appId;
-			review.os = 'Android';
-			review.device = 'Android';
-			review.type = 'review';
 			// Review ID
 			const id = $(reviewObj).children('.review-header').attr('data-reviewid');
 			review.id = id;

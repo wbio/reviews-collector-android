@@ -42,10 +42,6 @@ describe('integration testing', () => {
 		it('should include values for (almost) all fields', () => {
 			expect(_.isArray(result.reviews)).to.be.true;
 			const fields = {
-				appId: 0,
-				os: 0,
-				device: 0,
-				type: 0,
 				id: 0,
 				date: 0,
 				rating: 0,
@@ -54,10 +50,6 @@ describe('integration testing', () => {
 			};
 			// Add up the number of times each field was present
 			_.forEach(result.reviews, (review) => {
-				if (review.appId) { fields.appId++; }
-				if (review.os) { fields.os++; }
-				if (review.device) { fields.device++; }
-				if (review.type) { fields.type++; }
 				if (review.id) { fields.id++; }
 				if (review.date) { fields.date++; }
 				if (review.rating) { fields.rating++; }
@@ -66,10 +58,6 @@ describe('integration testing', () => {
 			});
 			const numReviews = result.reviews.length;
 			// Check all of the mandatory fields
-			expect(fields.appId).to.equal(numReviews);
-			expect(fields.os).to.equal(numReviews);
-			expect(fields.device).to.equal(numReviews);
-			expect(fields.type).to.equal(numReviews);
 			expect(fields.id).to.equal(numReviews);
 			expect(fields.date).to.equal(numReviews);
 			expect(fields.rating).to.equal(numReviews);
