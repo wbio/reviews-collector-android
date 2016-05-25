@@ -1,7 +1,7 @@
 {
   "name": "reviews-collector-android",
   "version": "0.1.3",
-  "description": "",
+  "description": "Collect reviews for Android apps from the Google Play Store",
   "main": "./lib/index.js",
   "scripts": {
     "test": "npm run compile && mocha --compilers js:babel-core/register --timeout 15000",
