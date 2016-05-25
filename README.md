@@ -112,7 +112,7 @@ Where the event name is one of:
 		appId: 'com.instagram.android', // The ID of the app
 		pageNum: 3, // The page that the review was pulled from
 		reviews: [ /* Review objects */ ],
-		firstReviewTime: 'Wed May 25 2016 04:00:00 GMT-0400 (EDT)', // The timestamp of the oldest review on the page (as a Date object)
+		firstReviewTime: 'Wed May 23 2016 04:00:00 GMT-0400 (EDT)', // The timestamp of the oldest review on the page (as a Date object)
 		lastReviewTime: 'Wed May 25 2016 04:00:00 GMT-0400 (EDT)', // The timestamp of the newest review on the page (as a Date object)
 		// If the 'checkBeforeContinue' option is set to true:
 		continue: function() {}, // Continue processing reviews for the app
