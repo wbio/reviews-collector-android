@@ -8,7 +8,7 @@
 ## Getting Started
 
 ```javascript
-const Collector = require('reviews-collector-ios');
+const Collector = require('reviews-collector-android');
 // Create an instance of Collector to get reviews of Instagram and Facebook and only parse 2 pages max
 const collector = new Collector(
 	['com.instagram.android', 'com.facebook.katana'], 
